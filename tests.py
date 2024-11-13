@@ -7,8 +7,7 @@ sys.path.insert(0, "opcua-widgets")
 import os
 print("PWD", os.getcwd())
 
-from opcua import ua
-from opcua import Server
+from asyncua.sync import Server
 
 from PyQt5.QtCore import QTimer, QSettings, QModelIndex, Qt, QCoreApplication
 from PyQt5.QtWidgets import QApplication
@@ -63,5 +62,3 @@ class TestClient(unittest.TestCase):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     unittest.main()
-
-
