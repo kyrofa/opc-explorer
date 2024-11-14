@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>FreeOpcUa Client</string>
+   <string>OPC Explorer</string>
   </property>
   <property name="windowIcon">
    <iconset>

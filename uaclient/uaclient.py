@@ -19,7 +19,7 @@ class UaClient(object):
 
     def __init__(self):
         self.settings = QSettings()
-        self.application_uri = "urn:freeopcua:client-gui"
+        self.application_uri = "urn:key-technology:opc-explorer"
         self.client = None
         self._connected = False
         self._datachange_sub = None
@@ -105,7 +105,7 @@ class UaClient(object):
         logger.info("Connecting to %s with parameters %s, %s, %s, %s", uri, self.security_mode, self.security_policy, self.user_certificate_path, self.user_private_key_path)
         self.client = Client(uri)
         self.client.application_uri = self.application_uri
-        self.client.description = "FreeOpcUa Client GUI"
+        self.client.description = "OPC Explorer GUI"
 
         # Set user identity token
         if self.user_private_key_path:

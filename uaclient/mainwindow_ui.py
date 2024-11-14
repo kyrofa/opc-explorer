@@ -334,7 +334,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "FreeOpcUa Client"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "OPC Explorer"))
         self.menuOPC_UA_Client.setTitle(_translate("MainWindow", "Act&ions"))
         self.menuSettings.setTitle(_translate("MainWindow", "Settings"))
         self.attrDockWidget.setWindowTitle(_translate("MainWindow", "&Attributes"))
