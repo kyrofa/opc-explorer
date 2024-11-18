@@ -13,7 +13,7 @@ class ConnectionDialog(QDialog):
         self.uaclient = parent.uaclient
         self.uri = uri
         self.parent = parent
-        
+
         self.ui.modeComboBox.addItem("None")
         self.ui.modeComboBox.addItem("Sign")
         self.ui.modeComboBox.addItem("SignAndEncrypt")
@@ -83,13 +83,15 @@ class ConnectionDialog(QDialog):
         self.ui.privateKeyLabel.setText(value)
 
     def get_certificate(self):
-        path, ok = QFileDialog.getOpenFileName(self, "Select certificate", self.certificate_path, "Certificate (*.der)")
+        path, ok = QFileDialog.getOpenFileName(
+            self, "Select certificate", self.certificate_path, "Certificate (*.der)"
+        )
         if ok:
             self.ui.certificateLabel.setText(path)
 
     def get_private_key(self):
-        path, ok = QFileDialog.getOpenFileName(self, "Select private key", self.private_key_path, "Private key (*.pem)")
+        path, ok = QFileDialog.getOpenFileName(
+            self, "Select private key", self.private_key_path, "Private key (*.pem)"
+        )
         if ok:
             self.ui.privateKeyLabel.setText(path)
-
-

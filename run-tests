@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+
+run_static=false
+run_unit=false
+
+if [ "$#" -eq 0 ]; then
+	run_static=true
+	run_unit=true
+fi
+
+options=$(getopt --options su --long static,unit -- "$@")
+eval set -- "$options"
+while true; do
+	case "$1" in
+	-s | --static)
+		run_static=true
+		;;
+	-u | --unit)
+		run_unit=true
+		;;
+	--)
+		shift
+		break
+		;;
+	esac
+	shift
+done
+
+dir=$(CDPATH="" cd -- "$(dirname -- "$0")" && pwd)
+
+if [ "$run_static" = true ]; then
+	echo "Running black..."
+	python3 -m black --check --diff "$dir"
+
+	# Run flake8
+	echo "Running flake8..."
+	python3 -m flake8 "$dir"
+
+	# Run mypy
+	echo "Running mypy..."
+	python3 -m mypy "$dir"
+fi
+
+if [ "$run_unit" = true ]; then
+	python3 -m pytest
+fi

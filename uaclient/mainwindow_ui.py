@@ -16,7 +16,11 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(922, 879)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("uaclient/../network.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(
+            QtGui.QPixmap("uaclient/../network.svg"),
+            QtGui.QIcon.Normal,
+            QtGui.QIcon.Off,
+        )
         MainWindow.setWindowIcon(icon)
         self.centralWidget = QtWidgets.QWidget(MainWindow)
         self.centralWidget.setObjectName("centralWidget")
@@ -25,7 +29,9 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setSpacing(6)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.splitter = QtWidgets.QSplitter(self.centralWidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.splitter.sizePolicy().hasHeightForWidth())
@@ -33,7 +39,9 @@ class Ui_MainWindow(object):
         self.splitter.setOrientation(QtCore.Qt.Horizontal)
         self.splitter.setObjectName("splitter")
         self.treeView = QtWidgets.QTreeView(self.splitter)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.treeView.sizePolicy().hasHeightForWidth())
@@ -58,18 +66,26 @@ class Ui_MainWindow(object):
         self.statusBar.setObjectName("statusBar")
         MainWindow.setStatusBar(self.statusBar)
         self.attrDockWidget = QtWidgets.QDockWidget(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.attrDockWidget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.attrDockWidget.sizePolicy().hasHeightForWidth()
+        )
         self.attrDockWidget.setSizePolicy(sizePolicy)
         self.attrDockWidget.setMinimumSize(QtCore.QSize(400, 170))
         self.attrDockWidget.setObjectName("attrDockWidget")
         self.dockWidgetContents = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dockWidgetContents.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.dockWidgetContents.sizePolicy().hasHeightForWidth()
+        )
         self.dockWidgetContents.setSizePolicy(sizePolicy)
         self.dockWidgetContents.setMinimumSize(QtCore.QSize(100, 0))
         self.dockWidgetContents.setObjectName("dockWidgetContents")
@@ -79,7 +95,9 @@ class Ui_MainWindow(object):
         self.gridLayout_4.setObjectName("gridLayout_4")
         self.attrView = QtWidgets.QTreeView(self.dockWidgetContents)
         self.attrView.setFocusPolicy(QtCore.Qt.StrongFocus)
-        self.attrView.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.attrView.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContents
+        )
         self.attrView.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
         self.attrView.setProperty("showDropIndicator", False)
         self.attrView.setTextElideMode(QtCore.Qt.ElideNone)
@@ -89,7 +107,9 @@ class Ui_MainWindow(object):
         self.attrView.setWordWrap(True)
         self.attrView.setObjectName("attrView")
         self.gridLayout_4.addWidget(self.attrView, 0, 0, 1, 2)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_4.addItem(spacerItem, 1, 0, 1, 1)
         self.attrRefreshButton = QtWidgets.QPushButton(self.dockWidgetContents)
         self.attrRefreshButton.setObjectName("attrRefreshButton")
@@ -97,19 +117,27 @@ class Ui_MainWindow(object):
         self.attrDockWidget.setWidget(self.dockWidgetContents)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.attrDockWidget)
         self.addrDockWidget = QtWidgets.QDockWidget(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.addrDockWidget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.addrDockWidget.sizePolicy().hasHeightForWidth()
+        )
         self.addrDockWidget.setSizePolicy(sizePolicy)
         self.addrDockWidget.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
         self.addrDockWidget.setAllowedAreas(QtCore.Qt.TopDockWidgetArea)
         self.addrDockWidget.setObjectName("addrDockWidget")
         self.dockWidgetContents_2 = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dockWidgetContents_2.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.dockWidgetContents_2.sizePolicy().hasHeightForWidth()
+        )
         self.dockWidgetContents_2.setSizePolicy(sizePolicy)
         self.dockWidgetContents_2.setObjectName("dockWidgetContents_2")
         self.gridLayout = QtWidgets.QGridLayout(self.dockWidgetContents_2)
@@ -125,7 +153,9 @@ class Ui_MainWindow(object):
         self.disconnectButton.setObjectName("disconnectButton")
         self.gridLayout.addWidget(self.disconnectButton, 1, 5, 1, 1)
         self.addrComboBox = QtWidgets.QComboBox(self.dockWidgetContents_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.addrComboBox.sizePolicy().hasHeightForWidth())
@@ -141,17 +171,25 @@ class Ui_MainWindow(object):
         self.addrDockWidget.setWidget(self.dockWidgetContents_2)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(4), self.addrDockWidget)
         self.subDockWidget = QtWidgets.QDockWidget(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.subDockWidget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.subDockWidget.sizePolicy().hasHeightForWidth()
+        )
         self.subDockWidget.setSizePolicy(sizePolicy)
         self.subDockWidget.setObjectName("subDockWidget")
         self.dockWidgetContents_3 = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dockWidgetContents_3.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.dockWidgetContents_3.sizePolicy().hasHeightForWidth()
+        )
         self.dockWidgetContents_3.setSizePolicy(sizePolicy)
         self.dockWidgetContents_3.setObjectName("dockWidgetContents_3")
         self.gridLayout_3 = QtWidgets.QGridLayout(self.dockWidgetContents_3)
@@ -171,17 +209,25 @@ class Ui_MainWindow(object):
         self.subDockWidget.setWidget(self.dockWidgetContents_3)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.subDockWidget)
         self.refDockWidget = QtWidgets.QDockWidget(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.refDockWidget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.refDockWidget.sizePolicy().hasHeightForWidth()
+        )
         self.refDockWidget.setSizePolicy(sizePolicy)
         self.refDockWidget.setObjectName("refDockWidget")
         self.dockWidgetContents_4 = QtWidgets.QWidget()
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.dockWidgetContents_4.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.dockWidgetContents_4.sizePolicy().hasHeightForWidth()
+        )
         self.dockWidgetContents_4.setSizePolicy(sizePolicy)
         self.dockWidgetContents_4.setObjectName("dockWidgetContents_4")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.dockWidgetContents_4)
@@ -197,7 +243,9 @@ class Ui_MainWindow(object):
         self.refDockWidget.setWidget(self.dockWidgetContents_4)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.refDockWidget)
         self.evDockWidget = QtWidgets.QDockWidget(MainWindow)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.evDockWidget.sizePolicy().hasHeightForWidth())
@@ -299,7 +347,9 @@ class Ui_MainWindow(object):
         self.actionDark_Mode.setCheckable(True)
         self.actionDark_Mode.setObjectName("actionDark_Mode")
         self.actionClient_Application_Certificate = QtWidgets.QAction(MainWindow)
-        self.actionClient_Application_Certificate.setObjectName("actionClient_Application_Certificate")
+        self.actionClient_Application_Certificate.setObjectName(
+            "actionClient_Application_Certificate"
+        )
         self.actionFocusTree = QtWidgets.QAction(MainWindow)
         self.actionFocusTree.setObjectName("actionFocusTree")
         self.menuOPC_UA_Client.addAction(self.actionConnect)
@@ -351,29 +401,61 @@ class Ui_MainWindow(object):
         self.buttonApply.setText(_translate("MainWindow", "Apply"))
         self.actionConnect.setText(_translate("MainWindow", "&Connect"))
         self.actionDisconnect.setText(_translate("MainWindow", "&Disconnect"))
-        self.actionDisconnect.setToolTip(_translate("MainWindow", "Disconnect from server"))
-        self.actionSubscribeDataChange.setText(_translate("MainWindow", "&Subscribe to data change"))
-        self.actionSubscribeDataChange.setToolTip(_translate("MainWindow", "Subscribe to data change from selected node"))
-        self.actionUnsubscribeDataChange.setText(_translate("MainWindow", "&Unsubscribe to DataChange"))
-        self.actionUnsubscribeDataChange.setToolTip(_translate("MainWindow", "Unsubscribe to DataChange for current node"))
-        self.actionSubscribeEvent.setText(_translate("MainWindow", "Subscribe to &events"))
-        self.actionSubscribeEvent.setToolTip(_translate("MainWindow", "Subscribe to events from selected node"))
-        self.actionUnsubscribeEvents.setText(_translate("MainWindow", "U&nsubscribe to Events"))
-        self.actionUnsubscribeEvents.setToolTip(_translate("MainWindow", "Unsubscribe to Events from current node"))
+        self.actionDisconnect.setToolTip(
+            _translate("MainWindow", "Disconnect from server")
+        )
+        self.actionSubscribeDataChange.setText(
+            _translate("MainWindow", "&Subscribe to data change")
+        )
+        self.actionSubscribeDataChange.setToolTip(
+            _translate("MainWindow", "Subscribe to data change from selected node")
+        )
+        self.actionUnsubscribeDataChange.setText(
+            _translate("MainWindow", "&Unsubscribe to DataChange")
+        )
+        self.actionUnsubscribeDataChange.setToolTip(
+            _translate("MainWindow", "Unsubscribe to DataChange for current node")
+        )
+        self.actionSubscribeEvent.setText(
+            _translate("MainWindow", "Subscribe to &events")
+        )
+        self.actionSubscribeEvent.setToolTip(
+            _translate("MainWindow", "Subscribe to events from selected node")
+        )
+        self.actionUnsubscribeEvents.setText(
+            _translate("MainWindow", "U&nsubscribe to Events")
+        )
+        self.actionUnsubscribeEvents.setToolTip(
+            _translate("MainWindow", "Unsubscribe to Events from current node")
+        )
         self.actionCopyPath.setText(_translate("MainWindow", "Copy &Path"))
-        self.actionCopyPath.setToolTip(_translate("MainWindow", "Copy path to node to clipboard"))
+        self.actionCopyPath.setToolTip(
+            _translate("MainWindow", "Copy path to node to clipboard")
+        )
         self.actionCopyNodeId.setText(_translate("MainWindow", "C&opy NodeId"))
-        self.actionCopyNodeId.setToolTip(_translate("MainWindow", "Copy NodeId to clipboard"))
+        self.actionCopyNodeId.setToolTip(
+            _translate("MainWindow", "Copy NodeId to clipboard")
+        )
         self.actionAddToGraph.setText(_translate("MainWindow", "Add to &Graph"))
-        self.actionAddToGraph.setToolTip(_translate("MainWindow", "Add this node to the graph"))
+        self.actionAddToGraph.setToolTip(
+            _translate("MainWindow", "Add this node to the graph")
+        )
         self.actionAddToGraph.setShortcut(_translate("MainWindow", "Ctrl+G"))
-        self.actionRemoveFromGraph.setText(_translate("MainWindow", "Remove from Graph"))
-        self.actionRemoveFromGraph.setToolTip(_translate("MainWindow", "Remove this node from the graph"))
+        self.actionRemoveFromGraph.setText(
+            _translate("MainWindow", "Remove from Graph")
+        )
+        self.actionRemoveFromGraph.setToolTip(
+            _translate("MainWindow", "Remove this node from the graph")
+        )
         self.actionRemoveFromGraph.setShortcut(_translate("MainWindow", "Ctrl+Shift+G"))
         self.actionCall.setText(_translate("MainWindow", "Call"))
         self.actionCall.setToolTip(_translate("MainWindow", "Call Ua Method"))
         self.actionDark_Mode.setText(_translate("MainWindow", "Dark Mode"))
-        self.actionDark_Mode.setStatusTip(_translate("MainWindow", "Enables Dark Mode Theme"))
-        self.actionClient_Application_Certificate.setText(_translate("MainWindow", "Client Application Certificate"))
+        self.actionDark_Mode.setStatusTip(
+            _translate("MainWindow", "Enables Dark Mode Theme")
+        )
+        self.actionClient_Application_Certificate.setText(
+            _translate("MainWindow", "Client Application Certificate")
+        )
         self.actionFocusTree.setText(_translate("MainWindow", "FocusTree"))
         self.actionFocusTree.setShortcut(_translate("MainWindow", "Alt+T"))

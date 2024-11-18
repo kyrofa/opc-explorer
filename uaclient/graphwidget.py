@@ -19,8 +19,8 @@ except ImportError:
 
 if use_graph:
     pg.setConfigOptions(antialias=True)
-    pg.setConfigOption('background', 'w')
-    pg.setConfigOption('foreground', 'k')
+    pg.setConfigOption("background", "w")
+    pg.setConfigOption("foreground", "k")
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,15 @@ logger = logging.getLogger(__name__)
 class GraphUI(object):
 
     # use tango color schema (public domain)
-    colorCycle = ['#4e9a06ff', '#ce5c00ff', '#3465a4ff', '#75507bff', '#cc0000ff', '#edd400ff']
-    acceptedDatatypes = ['Decimal128', 'Double', 'Float', 'Integer', 'UInteger']
+    colorCycle = [
+        "#4e9a06ff",
+        "#ce5c00ff",
+        "#3465a4ff",
+        "#75507bff",
+        "#cc0000ff",
+        "#edd400ff",
+    ]
+    acceptedDatatypes = ["Decimal128", "Double", "Float", "Integer", "UInteger"]
 
     def __init__(self, window, uaclient):
         self.window = window
@@ -37,18 +44,22 @@ class GraphUI(object):
 
         # exit if the modules are not present
         if not use_graph:
-            self.window.ui.graphLayout.addWidget(QLabel("pyqtgraph or numpy not installed"))
+            self.window.ui.graphLayout.addWidget(
+                QLabel("pyqtgraph or numpy not installed")
+            )
             return
         self._node_list = []  # holds the nodes to poll
         self._channels = []  # holds the actual data
         self._curves = []  # holds the curve objects
-        self.pw = pg.PlotWidget(name='Plot1')
+        self.pw = pg.PlotWidget(name="Plot1")
         self.pw.showGrid(x=True, y=True, alpha=0.3)
         self.legend = self.pw.addLegend()
         self.window.ui.graphLayout.addWidget(self.pw)
 
         self.window.ui.actionAddToGraph.triggered.connect(self._add_node_to_channel)
-        self.window.ui.actionRemoveFromGraph.triggered.connect(self._remove_node_from_channel)
+        self.window.ui.actionRemoveFromGraph.triggered.connect(
+            self._remove_node_from_channel
+        )
 
         # populate contextual menu
         self.window.ui.treeView.addAction(self.window.ui.actionAddToGraph)
@@ -60,7 +71,7 @@ class GraphUI(object):
 
     def restartTimer(self):
         # stop current timer, if it exists
-        if hasattr(self, 'timer') and self.timer.isActive():
+        if hasattr(self, "timer") and self.timer.isActive():
             self.timer.stop()
 
         # define the number of polls displayed in graph
@@ -91,12 +102,22 @@ class GraphUI(object):
 
             dtypeStr = ua.ObjectIdNames[dtype.Value.Value.Identifier]
 
-            if dtypeStr in self.acceptedDatatypes and not isinstance(node.get_value(), list):
+            if dtypeStr in self.acceptedDatatypes and not isinstance(
+                node.get_value(), list
+            ):
                 self._node_list.append(node)
                 displayName = node.read_display_name().Text
                 colorIndex = len(self._node_list) % len(self.colorCycle)
-                self._curves.append \
-                    (self.pw.plot(pen=pg.mkPen(color=self.colorCycle[colorIndex], width=3, style=Qt.SolidLine), name=displayName))
+                self._curves.append(
+                    self.pw.plot(
+                        pen=pg.mkPen(
+                            color=self.colorCycle[colorIndex],
+                            width=3,
+                            style=Qt.SolidLine,
+                        ),
+                        name=displayName,
+                    )
+                )
                 # set initial data to zero
                 self._channels.append(np.zeros(self.N))  # init data sequence with zeros
                 # add the new channel data to the new curve
@@ -104,7 +125,10 @@ class GraphUI(object):
                 logger.info("Variable %s added to graph", displayName)
 
             else:
-                logger.info("Variable cannot be added to graph because it is of type %s or an array", dtypeStr)
+                logger.info(
+                    "Variable cannot be added to graph because it is of type %s or an array",
+                    dtypeStr,
+                )
 
     @trycatchslot
     def _remove_node_from_channel(self, node=None):
@@ -124,7 +148,9 @@ class GraphUI(object):
     def pushtoGraph(self):
         # ringbuffer: shift and replace last
         for i, node in enumerate(self._node_list):
-            self._channels[i] = np.roll(self._channels[i], -1)  # shift elements to the left by one
+            self._channels[i] = np.roll(
+                self._channels[i], -1
+            )  # shift elements to the left by one
             self._channels[i][-1] = float(node.get_value())
             self._curves[i].setData(self.ts, self._channels[i])
 
