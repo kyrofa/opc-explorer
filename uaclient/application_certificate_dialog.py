@@ -41,17 +41,21 @@ class ApplicationCertificateDialog(QDialog):
         self.ui.privateKeyLabel.setText(value)
 
     def get_certificate(self):
-        path, ok = QFileDialog.getOpenFileName(self,
-                                               "Select application certificate",
-                                               self.uaclient.application_certificate_path,
-                                               "Certificate (*.der)")
+        path, ok = QFileDialog.getOpenFileName(
+            self,
+            "Select application certificate",
+            self.uaclient.application_certificate_path,
+            "Certificate (*.der)",
+        )
         if ok:
             self.ui.certificateLabel.setText(path)
 
     def get_private_key(self):
-        path, ok = QFileDialog.getOpenFileName(self,
-                                               "Select application private key",
-                                               self.uaclient.application_private_key_path,
-                                               "Private key (*.pem)")
+        path, ok = QFileDialog.getOpenFileName(
+            self,
+            "Select application private key",
+            self.uaclient.application_private_key_path,
+            "Private key (*.pem)",
+        )
         if ok:
             self.ui.privateKeyLabel.setText(path)

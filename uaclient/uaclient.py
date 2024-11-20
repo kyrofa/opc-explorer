@@ -47,10 +47,10 @@ class UaClient(object):
         client = Client(uri, timeout=2)
         edps = client.connect_and_get_server_endpoints()
         for i, ep in enumerate(edps, start=1):
-            logger.info('Endpoint %s:', i)
-            for (n, v) in endpoint_to_strings(ep):
-                logger.info('  %s: %s', n, v)
-            logger.info('')
+            logger.info("Endpoint %s:", i)
+            for n, v in endpoint_to_strings(ep):
+                logger.info("  %s: %s", n, v)
+            logger.info("")
         return edps
 
     def load_security_settings(self, uri):
@@ -73,10 +73,12 @@ class UaClient(object):
         mysettings = self.settings.value("security_settings", None)
         if mysettings is None:
             mysettings = {}
-        mysettings[uri] = [self.security_mode,
-                           self.security_policy,
-                           self.user_certificate_path,
-                           self.user_private_key_path]
+        mysettings[uri] = [
+            self.security_mode,
+            self.security_policy,
+            self.user_certificate_path,
+            self.user_private_key_path,
+        ]
         self.settings.setValue("security_settings", mysettings)
 
     def load_application_certificate_settings(self):
@@ -102,7 +104,14 @@ class UaClient(object):
 
     def connect(self, uri):
         self.disconnect()
-        logger.info("Connecting to %s with parameters %s, %s, %s, %s", uri, self.security_mode, self.security_policy, self.user_certificate_path, self.user_private_key_path)
+        logger.info(
+            "Connecting to %s with parameters %s, %s, %s, %s",
+            uri,
+            self.security_mode,
+            self.security_policy,
+            self.user_certificate_path,
+            self.user_private_key_path,
+        )
         self.client = Client(uri)
         self.client.application_uri = self.application_uri
         self.client.description = "OPC Explorer GUI"
@@ -116,10 +125,12 @@ class UaClient(object):
         # Set security mode and security policy
         if self.security_mode is not None and self.security_policy is not None:
             self.client.set_security(
-                getattr(crypto.security_policies, 'SecurityPolicy' + self.security_policy),
+                getattr(
+                    crypto.security_policies, "SecurityPolicy" + self.security_policy
+                ),
                 self.application_certificate_path,
                 self.application_private_key_path,
-                mode=getattr(ua.MessageSecurityMode, self.security_mode)
+                mode=getattr(ua.MessageSecurityMode, self.security_mode),
             )
         self.client.connect()
         self._connected = True
@@ -164,7 +175,13 @@ class UaClient(object):
     def get_node_attrs(self, node):
         if not isinstance(node, SyncNode):
             node = self.client.get_node(node)
-        attrs = node.read_attributes([ua.AttributeIds.DisplayName, ua.AttributeIds.BrowseName, ua.AttributeIds.NodeId])
+        attrs = node.read_attributes(
+            [
+                ua.AttributeIds.DisplayName,
+                ua.AttributeIds.BrowseName,
+                ua.AttributeIds.NodeId,
+            ]
+        )
         return node, [attr.Value.Value.to_string() for attr in attrs]
 
     @staticmethod
