@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        python_version: [3.8]
+        python_version: ['3.8', '3.9', '3.10']
 
     steps:
       - name: Check out code
@@ -31,4 +31,4 @@ jobs:
       - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen
-        run: pytest ./tests
+        run: python3 -m pytest
