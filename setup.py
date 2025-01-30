@@ -11,5 +11,10 @@ setup(
     packages=["uaclient", "uaclient.theme"],
     license="GNU General Public License",
     install_requires=["asyncua", "opcua-widgets>=0.6.0", "PyQt5"],
-    entry_points={"console_scripts": ["opc-explorer = uaclient.mainwindow:main"]},
+    entry_points={
+        "console_scripts": [
+            "opc-explorer = uaclient.mainwindow:main",
+            "opc-explorer-kyrofa = uaclient.mainwindow_kyrofa:main",
+        ]
+    },
 )
