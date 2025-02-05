@@ -22,8 +22,8 @@ import asyncua.ua.uaerrors
 from uawidgets import resources  # noqa: F401
 
 from uaclient.mainwindow_ui import Ui_MainWindow
-from uaclient.opc_tree_model import OpcTreeModel
-from uaclient.opc_tree_item import OpcTreeItem
+from uaclient import tree_ui
+from uaclient.graph_ui import GraphWidget
 
 _SubscriptionData = collections.namedtuple("_SubscriptionData", ["handle", "signal"])
 
@@ -80,12 +80,15 @@ class Window(QMainWindow):
         self._ui.statusBar.hide()
 
         self._setup_ui_tree()
+        self._setup_ui_graph()
         self._setup_ui_dock()
         self._setup_ui_addr_combo_box()
         self._setup_ui_connect_disconnect()
 
     def _setup_ui_tree(self):
-        self._model = OpcTreeModel([AttributeIds.DisplayName, AttributeIds.Value])
+        self._model = tree_ui.OpcTreeModel(
+            [AttributeIds.DisplayName, AttributeIds.Value]
+        )
         self._model.item_added.connect(self._subscribe_to_node)
         self._model.item_removed.connect(self._unsubscribe_from_node)
 
@@ -95,6 +98,17 @@ class Window(QMainWindow):
         self._ui.treeView.header().setSectionResizeMode(0)
         self._ui.treeView.header().setStretchLastSection(True)
         self._ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        # populate contextual menu
+        self._ui.treeView.addAction(self._ui.actionAddToGraph)
+        self._ui.treeView.addAction(self._ui.actionRemoveFromGraph)
+
+    def _setup_ui_graph(self):
+        self._graph_ui = GraphWidget(self)
+        self._ui.graphLayout.addWidget(self._graph_ui)
+
+        self._ui.actionAddToGraph.triggered.connect(self._handle_add_to_graph)
+        self._ui.actionRemoveFromGraph.triggered.connect(self._handle_remove_from_graph)
 
     def _setup_ui_dock(self):
         # fix stuff imposible to do in qtdesigner
@@ -128,8 +142,20 @@ class Window(QMainWindow):
         subscription_data = self._ua_subscription_data[node.nodeid]
         subscription_data.signal.signal.emit(value, timestamp)
 
-    @asyncSlot(OpcTreeItem)
-    async def _subscribe_to_node(self, item: OpcTreeItem):
+    @asyncSlot()
+    async def _handle_add_to_graph(self):
+        index = self._ui.treeView.currentIndex()
+        item = index.internalPointer()
+        await self._graph_ui.add_node(item.node)
+
+    @asyncSlot()
+    async def _handle_remove_from_graph(self):
+        index = self._ui.treeView.currentIndex()
+        item = index.internalPointer()
+        await self._graph_ui.remove_node(item.node)
+
+    @asyncSlot(tree_ui.OpcTreeItem)
+    async def _subscribe_to_node(self, item: tree_ui.OpcTreeItem):
         with contextlib.suppress(
             asyncua.ua.uaerrors.BadAttributeIdInvalid,
             asyncua.ua.uaerrors.BadTooManyMonitoredItems,
@@ -143,8 +169,8 @@ class Window(QMainWindow):
                 functools.partial(item.set_data, AttributeIds.Value)
             )
 
-    @asyncSlot(OpcTreeItem)
-    async def _unsubscribe_from_node(self, item: OpcTreeItem):
+    @asyncSlot(tree_ui.OpcTreeItem)
+    async def _unsubscribe_from_node(self, item: tree_ui.OpcTreeItem):
         try:
             subscription_data = self._ua_subscription_data.pop(item.node.nodeid)
         except KeyError:

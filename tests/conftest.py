@@ -1,5 +1,5 @@
 import pytest
-from asyncua.sync import Server
+from asyncua import Server
 from uaclient.mainwindow import Window
 
 
@@ -9,12 +9,12 @@ def url():
 
 
 @pytest.fixture(scope="module")
-def server(url):
+async def server(url):
     server = Server()
     server.set_endpoint(url)
-    server.start()
+    await server.start()
     yield server
-    server.stop()
+    await server.stop()
 
 
 @pytest.fixture

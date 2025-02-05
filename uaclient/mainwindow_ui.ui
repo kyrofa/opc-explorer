@@ -63,7 +63,7 @@
      <x>0</x>
      <y>0</y>
      <width>922</width>
-     <height>24</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuOPC_UA_Client">
@@ -351,59 +351,7 @@
    <widget class="QWidget" name="dockWidgetContents_6">
     <layout class="QGridLayout" name="gridLayout_7">
      <item row="0" column="0">
-      <layout class="QVBoxLayout" name="graphLayout">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="labelNumberOfPoints">
-           <property name="text">
-            <string>Number of Points</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="spinBoxNumberOfPoints">
-           <property name="minimum">
-            <number>10</number>
-           </property>
-           <property name="maximum">
-            <number>100</number>
-           </property>
-           <property name="value">
-            <number>30</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelIntervall">
-           <property name="text">
-            <string>Intervall [s]</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="spinBoxIntervall">
-           <property name="minimum">
-            <number>1</number>
-           </property>
-           <property name="maximum">
-            <number>3600</number>
-           </property>
-           <property name="value">
-            <number>5</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="buttonApply">
-           <property name="text">
-            <string>Apply</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="graphLayout"/>
      </item>
     </layout>
    </widget>
@@ -511,9 +459,6 @@
   <tabstop>attrRefreshButton</tabstop>
   <tabstop>refView</tabstop>
   <tabstop>evView</tabstop>
-  <tabstop>spinBoxNumberOfPoints</tabstop>
-  <tabstop>spinBoxIntervall</tabstop>
-  <tabstop>buttonApply</tabstop>
   <tabstop>logTextEdit</tabstop>
  </tabstops>
  <resources/>
