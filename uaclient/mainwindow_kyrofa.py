@@ -67,8 +67,8 @@ class Window(QMainWindow):
 
     def _setup_settings(self):
         # setup QSettings for application and get a settings object
-        QCoreApplication.setOrganizationName("FreeOpcUa")
-        QCoreApplication.setApplicationName("OpcUaClient")
+        QCoreApplication.setOrganizationName("Key Technology")
+        QCoreApplication.setApplicationName("OPC Explorer")
         self._settings = QSettings()
 
     def _setup_ui(self):
@@ -121,7 +121,7 @@ class Window(QMainWindow):
 
     def _setup_ui_addr_combo_box(self):
         # Add previously-used addresses to the combo box
-        for addr in self._settings.value("address_list"):
+        for addr in self._settings.value("address_list", []):
             self._ui.addrComboBox.insertItem(100, addr)
 
     def _setup_ui_connect_disconnect(self):
@@ -216,8 +216,11 @@ class Window(QMainWindow):
             # self.event_ui.clear()
 
     def _save_new_uri(self, uri):
-        address_list = self._settings.value("address_list")
-        address_list.remove(uri)
+        address_list = self._settings.value("address_list", [])
+
+        with contextlib.suppress(ValueError):
+            address_list.remove(uri)
+
         address_list.insert(0, uri)
         if len(address_list) > self._settings.value("address_list_max_count", 10):
             address_list.pop(-1)
