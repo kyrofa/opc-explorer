@@ -1,6 +1,8 @@
 import itertools
 import asyncio
 import collections
+import copy
+import contextlib
 from typing import Optional, Any, List, Callable
 
 from qasync import asyncSlot
@@ -11,9 +13,9 @@ from PyQt5.QtCore import (
     QModelIndex,
     QAbstractItemModel,
 )
+from PyQt5.QtGui import QIcon
 
-from asyncua import Node
-from asyncua import ua
+from asyncua import ua, Node
 
 _BATCH_SIZE = 5
 
@@ -48,8 +50,15 @@ class OpcTreeItem(QObject):
         self._display_name = ""
         self._value = None
         self._children_fetched = False
+        self._type_definition = None
 
-        self._columns = columns
+        self._requested_columns = columns
+        self._columns = copy.deepcopy(columns)
+
+        # We always need the node class to determine icon, even if it wasn't requested
+        if ua.AttributeIds.NodeClass not in self._columns:
+            self._columns.append(ua.AttributeIds.NodeClass)
+
         self._model_column_to_ua_column = dict(
             [(index, column) for index, column in enumerate(columns)]
         )
@@ -62,6 +71,8 @@ class OpcTreeItem(QObject):
         self._data = collections.OrderedDict([(column, None) for column in columns])
 
     async def initialize(self) -> None:
+        self._type_definition = await self.node.read_type_definition()
+
         values = await self.node.read_attributes(self._columns)
         for index, column in enumerate(self._columns):
             self.set_data(column, values[index].Value.Value, emit=False)
@@ -159,16 +170,50 @@ class OpcTreeItem(QObject):
         if self.parent() is None:
             return 0
 
-        return self.parent()._children.index(self)
+        with contextlib.suppress(ValueError):
+            return self.parent()._children.index(self)
 
     def child_count(self) -> int:
         return len(self._children)
 
     def column_count(self) -> int:
-        return len(self._data)
+        return len(self._requested_columns)
 
     def data(self, column: int) -> Any:
         return self._data[self._model_column_to_ua_column[column]]
+
+    def icon(self) -> QIcon:
+        try:
+            node_class = self._data[ua.AttributeIds.NodeClass]
+        except KeyError:
+            return None
+
+        if node_class == ua.NodeClass.Object:
+            if self._type_definition is None:
+                return None
+
+            if self._type_definition == ua.TwoByteNodeId(ua.ObjectIds.FolderType):
+                return QIcon(":/folder.svg")
+            else:
+                return QIcon(":/object.svg")
+        elif node_class == ua.NodeClass.Variable:
+            if self._type_definition is None:
+                return None
+
+            if self._type_definition == ua.TwoByteNodeId(ua.ObjectIds.PropertyType):
+                return QIcon(":/property.svg")
+            else:
+                return QIcon(":/variable.svg")
+        elif node_class == ua.NodeClass.Method:
+            return QIcon(":/method.svg")
+        elif node_class == ua.NodeClass.ObjectType:
+            return QIcon(":/object_type.svg")
+        elif node_class == ua.NodeClass.VariableType:
+            return QIcon(":/variable_type.svg")
+        elif node_class == ua.NodeClass.DataType:
+            return QIcon(":/data_type.svg")
+        elif node_class == ua.NodeClass.ReferenceType:
+            return QIcon(":/reference_type.svg")
 
     def set_data(
         self, attribute: ua.AttributeIds, value: Any, *, emit: bool = True

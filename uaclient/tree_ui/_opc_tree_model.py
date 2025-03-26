@@ -105,11 +105,15 @@ class OpcTreeModel(QAbstractItemModel):
         return parent_item.column_count()
 
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
-        if not index.isValid() or role != Qt.ItemDataRole.DisplayRole:
+        if not index.isValid():
             return None
 
         item = index.internalPointer()
-        return item.data(index.column())
+        if role == Qt.ItemDataRole.DisplayRole:
+            return item.data(index.column())
+
+        if role == Qt.ItemDataRole.DecorationRole and index.column() == 0:
+            return item.icon()
 
     async def set_root_node(self, node: Node):
         index = self.index(0, 0)

@@ -23,7 +23,6 @@ from uawidgets import resources  # noqa: F401
 
 from uaclient.mainwindow_ui import Ui_MainWindow
 from uaclient import tree_ui
-from uaclient.graph_ui import GraphWidget
 
 _SubscriptionData = collections.namedtuple("_SubscriptionData", ["handle", "signal"])
 
@@ -80,7 +79,6 @@ class Window(QMainWindow):
         self._ui.statusBar.hide()
 
         self._setup_ui_tree()
-        self._setup_ui_graph()
         self._setup_ui_dock()
         self._setup_ui_addr_combo_box()
         self._setup_ui_connect_disconnect()
@@ -99,25 +97,11 @@ class Window(QMainWindow):
         self._ui.treeView.header().setStretchLastSection(True)
         self._ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        # populate contextual menu
-        self._ui.treeView.addAction(self._ui.actionAddToGraph)
-        self._ui.treeView.addAction(self._ui.actionRemoveFromGraph)
-
-    def _setup_ui_graph(self):
-        self._graph_ui = GraphWidget(self)
-        self._ui.graphLayout.addWidget(self._graph_ui)
-
-        self._ui.actionAddToGraph.triggered.connect(self._handle_add_to_graph)
-        self._ui.actionRemoveFromGraph.triggered.connect(self._handle_remove_from_graph)
-
     def _setup_ui_dock(self):
         # fix stuff imposible to do in qtdesigner
         # remove dock titlebar for addressbar
         w = QWidget()
         self._ui.addrDockWidget.setTitleBarWidget(w)
-        # tabify some docks
-        self.tabifyDockWidget(self._ui.evDockWidget, self._ui.refDockWidget)
-        self.tabifyDockWidget(self._ui.refDockWidget, self._ui.graphDockWidget)
 
     def _setup_ui_addr_combo_box(self):
         # Add previously-used addresses to the combo box
@@ -141,18 +125,6 @@ class Window(QMainWindow):
     ) -> None:
         subscription_data = self._ua_subscription_data[node.nodeid]
         subscription_data.signal.signal.emit(value, timestamp)
-
-    @asyncSlot()
-    async def _handle_add_to_graph(self):
-        index = self._ui.treeView.currentIndex()
-        item = index.internalPointer()
-        await self._graph_ui.add_node(item.node)
-
-    @asyncSlot()
-    async def _handle_remove_from_graph(self):
-        index = self._ui.treeView.currentIndex()
-        item = index.internalPointer()
-        await self._graph_ui.remove_node(item.node)
 
     @asyncSlot(tree_ui.OpcTreeItem)
     async def _subscribe_to_node(self, item: tree_ui.OpcTreeItem):
