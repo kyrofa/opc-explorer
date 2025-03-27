@@ -59,6 +59,10 @@ class OpcTreeItem(QObject):
         if ua.AttributeIds.NodeClass not in self._columns:
             self._columns.append(ua.AttributeIds.NodeClass)
 
+        # We always need the browse name for sorting, even if it wasn't requested
+        if ua.AttributeIds.BrowseName not in self._columns:
+            self._columns.append(ua.AttributeIds.BrowseName)
+
         self._model_column_to_ua_column = dict(
             [(index, column) for index, column in enumerate(columns)]
         )
@@ -70,23 +74,20 @@ class OpcTreeItem(QObject):
         # Create an dict that maintains column order
         self._data = collections.OrderedDict([(column, None) for column in columns])
 
-    async def initialize(self) -> None:
+    async def initialize(self, *, emit: bool = True) -> None:
         self._type_definition = await self.node.read_type_definition()
 
         values = await self.node.read_attributes(self._columns)
         for index, column in enumerate(self._columns):
             self.set_data(column, values[index].Value.Value, emit=False)
 
-        # Emit signal letting subscribers know what data has changed here
-        start_index = QModelIndex(self.persistent_index(0))
-        end_index = QModelIndex(self.persistent_index(self.column_count() - 1))
-        self.data_changed.emit(start_index, end_index)
-
-        # Emit signal letting subscribers know that a new item has been added/initialized
-        self.item_added.emit(self)
+        if emit:
+            self._emit_all_items_added()
 
     async def initialize_children(self) -> None:
-        await asyncio.gather(*[child.initialize() for child in self._children])
+        await asyncio.gather(*[child.initialize(emit=False) for child in self._children])
+        self._sort_children()
+        self._emit_all_items_added()
 
     async def fetch_children(
         self,
@@ -229,6 +230,18 @@ class OpcTreeItem(QObject):
                 self.persistent_index(self._ua_column_to_model_column[attribute])
             )
             self.data_changed.emit(index, index)
+
+    def _emit_all_items_added(self) -> None:
+        # Emit signal letting subscribers know what data has changed here
+        start_index = QModelIndex(self.persistent_index(0))
+        end_index = QModelIndex(self.persistent_index(self.column_count() - 1))
+        self.data_changed.emit(start_index, end_index)
+
+        # Emit signal letting subscribers know that a new item has been added/initialized
+        self.item_added.emit(self)
+
+    def _sort_children(self) -> None:
+        self._children.sort(key=lambda x: x._data[ua.AttributeIds.BrowseName])
 
     def __eq__(self, other) -> bool:
         if isinstance(other, OpcTreeItem):
