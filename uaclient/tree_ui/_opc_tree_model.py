@@ -118,10 +118,9 @@ class OpcTreeModel(QAbstractItemModel):
     async def set_root_node(self, node: Node):
         index = self.index(0, 0)
         item = OpcTreeItem(self, node, QPersistentModelIndex(), self._columns)
-        await item.initialize()
 
         self.beginInsertRows(index, 0, 0)
-        self._root_item.add_child(item)
+        await self._root_item.add_child(item)
         self.endInsertRows()
 
     def hasChildren(self, parent: QModelIndex = QModelIndex()) -> bool:
@@ -156,37 +155,15 @@ class OpcTreeModel(QAbstractItemModel):
         if not index.isValid():
             return
 
-        # Refresh and initialize the children for the item that was just expanded
-        await self._refresh_children(index)
+        # Refresh the children for the item that was just expanded
+        item = index.internalPointer()
+        await item.refresh_children()
 
     @asyncSlot(QModelIndex)
     async def handle_collapsed(self, index: QModelIndex) -> None:
         if not index.isValid():
             return
 
-        await self._reset_children(index)
-
-    async def _reset_children(self, index: QModelIndex) -> None:
-        if not index.isValid():
-            return
-
+        # Clear the children for the item just collapsed
         item = index.internalPointer()
-        item.reset_children(
-            before_remove_children=self.beginRemoveRows,
-            after_remove_children=self.endRemoveRows,
-        )
-
-    async def _refresh_children(self, index: QModelIndex) -> None:
-        if not index.isValid():
-            return
-
-        item = index.internalPointer()
-
-        await self._reset_children(index)  # Remove old children before we add new ones
-
-        await item.fetch_children(
-            before_add_children=self.beginInsertRows,
-            after_add_children=self.endInsertRows,
-        )
-
-        await item.initialize_children()
+        item.clear_children()

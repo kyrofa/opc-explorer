@@ -26,6 +26,10 @@ def _batched(iterable, batch_size):
     while batch := tuple(itertools.islice(iterator, batch_size)):
         yield batch
 
+async def _refresh_item(item):
+    await item._refresh_data()
+    return item
+
 
 class OpcTreeItem(QObject):
     data_changed = pyqtSignal(QModelIndex, QModelIndex)
@@ -74,45 +78,27 @@ class OpcTreeItem(QObject):
         # Create an dict that maintains column order
         self._data = collections.OrderedDict([(column, None) for column in columns])
 
-    async def initialize(self, *, emit: bool = True) -> None:
+    async def _refresh_data(self) -> None:
         self._type_definition = await self.node.read_type_definition()
 
         values = await self.node.read_attributes(self._columns)
         for index, column in enumerate(self._columns):
             self.set_data(column, values[index].Value.Value, emit=False)
 
-        if emit:
-            self._emit_all_items_added()
+    async def refresh_children(self) -> None:
+        self.clear_children() # Clear first
 
-    async def initialize_children(self) -> None:
-        await asyncio.gather(*[child.initialize(emit=False) for child in self._children])
-        self._sort_children()
-        self._emit_all_items_added()
-
-    async def fetch_children(
-        self,
-        *,
-        before_add_children: Optional[Callable[[QModelIndex, int, int], None]] = None,
-        after_add_children: Optional[Callable[[], None]] = None,
-    ) -> None:
         children = await self.node.get_children()
         index = self.persistent_index(0)
-        non_persistent_index = QModelIndex(index)
-        batch_index = self.child_count()
-        for child_batch in _batched(children, _BATCH_SIZE):
-            batch_size = len(child_batch)
+        items = [OpcTreeItem(self._model, child, index, self._requested_columns) for child in children]
 
-            if before_add_children is not None:
-                before_add_children(non_persistent_index, batch_index, batch_size - 1)
+        self._model.beginInsertRows(QModelIndex(index), 0, len(children)-1)
 
-            for child in child_batch:
-                item = OpcTreeItem(self._model, child, index, self._columns)
-                self.add_child(item)
+        for task in asyncio.as_completed([_refresh_item(item) for item in items]):
+            item = await task
+            await self.add_child(item)
 
-            if after_add_children is not None:
-                after_add_children()
-
-            batch_index += batch_size
+        self._model.endInsertRows()
 
         self._children_fetched = True
 
@@ -122,13 +108,31 @@ class OpcTreeItem(QObject):
     def children_fetched(self) -> bool:
         return self._children_fetched
 
-    def add_child(self, child: "OpcTreeItem") -> None:
+    async def add_child(self, child: "OpcTreeItem") -> None:
         child.setParent(self)
         child.set_parent_index(self.persistent_index(0))
         child.data_changed.connect(self.data_changed)
         child.item_added.connect(self.item_added)
         child.item_removed.connect(self.item_removed)
-        self._children.append(child)
+
+        try:
+            browse_name = child._data[ua.AttributeIds.BrowseName]
+        except KeyError:
+            await child._refresh_data()
+            browse_name = child._data[ua.AttributeIds.BrowseName]
+
+        # Maintain a sorted list here as we insert, so we don't have
+        # to sort after the fact. Using a sorted container would be
+        # more efficient, but it would be less clear and we really
+        # aren't dealing with that many nodes here.
+        destination_index = 0
+        for index, sibling in enumerate(self._children):
+            if browse_name < sibling._data[ua.AttributeIds.BrowseName]:
+                break
+            destination_index = index + 1
+
+        self._children.insert(destination_index, child)
+        self.item_added.emit(child)
 
     def child(self, row: int) -> Optional["OpcTreeItem"]:
         return self._children[row]
@@ -142,30 +146,21 @@ class OpcTreeItem(QObject):
             self._model.index(self.row(), column, QModelIndex(self._parent_index))
         )
 
-    def reset_children(
-        self,
-        *,
-        before_remove_children: Optional[
-            Callable[[QModelIndex, int, int], None]
-        ] = None,
-        after_remove_children: Optional[Callable[[], None]] = None,
-    ) -> None:
+    def clear_children(self) -> None:
         self._children_fetched = False
         children_count = self.child_count()
         if children_count == 0:
             return
 
-        if before_remove_children is not None:
-            index = QModelIndex(self.persistent_index(0))
-            before_remove_children(index, 0, children_count - 1)
+        index = QModelIndex(self.persistent_index(0))
+        self._model.beginRemoveRows(index, 0, children_count - 1)
 
         for child in self._children:
             self.item_removed.emit(child)
 
         self._children.clear()
 
-        if after_remove_children is not None:
-            after_remove_children()
+        self._model.endRemoveRows()
 
     def row(self) -> int:
         if self.parent() is None:
@@ -230,18 +225,6 @@ class OpcTreeItem(QObject):
                 self.persistent_index(self._ua_column_to_model_column[attribute])
             )
             self.data_changed.emit(index, index)
-
-    def _emit_all_items_added(self) -> None:
-        # Emit signal letting subscribers know what data has changed here
-        start_index = QModelIndex(self.persistent_index(0))
-        end_index = QModelIndex(self.persistent_index(self.column_count() - 1))
-        self.data_changed.emit(start_index, end_index)
-
-        # Emit signal letting subscribers know that a new item has been added/initialized
-        self.item_added.emit(self)
-
-    def _sort_children(self) -> None:
-        self._children.sort(key=lambda x: x._data[ua.AttributeIds.BrowseName])
 
     def __eq__(self, other) -> bool:
         if isinstance(other, OpcTreeItem):

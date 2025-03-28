@@ -135,8 +135,11 @@ class Window(QMainWindow):
     async def _handle_subscription_data(
         self, node: Node, value: Any, timestamp: str
     ) -> None:
-        subscription_data = self._ua_subscription_data[node.nodeid]
-        subscription_data.signal.signal.emit(value, timestamp)
+        # Suppress KeyError because there might be a race condition
+        # between unsubscribing and receiving data, i.e. we might
+        # receive data for a subscription we just removed.
+        with contextlib.suppress(KeyError):
+            self._ua_subscription_data[node.nodeid].signal.signal.emit(value, timestamp)
 
     @asyncSlot(tree_ui.OpcTreeItem)
     async def _subscribe_to_node(self, item: tree_ui.OpcTreeItem):
@@ -185,12 +188,13 @@ class Window(QMainWindow):
             raise
 
         self._save_new_uri(uri)
-        await self._model.set_root_node(self._uaclient.nodes.root)
-        self._ui.treeView.setFocus()
 
         self._ua_subscription = await self._uaclient.create_subscription(
             500, _DataChangeHandler(self._handle_subscription_data)
         )
+
+        await self._model.set_root_node(self._uaclient.nodes.root)
+        self._ui.treeView.setFocus()
 
     @asyncSlot()
     async def _disconnect(self):
