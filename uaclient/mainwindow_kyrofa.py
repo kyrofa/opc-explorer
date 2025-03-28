@@ -7,9 +7,10 @@ from typing import Any
 import contextlib
 import collections
 import functools
+import logging
 
 from qasync import QEventLoop, QApplication, asyncClose, asyncSlot
-from PyQt5.QtCore import QCoreApplication, QSettings, pyqtSignal, QObject
+from PyQt5.QtCore import QCoreApplication, QSettings, pyqtSignal, QObject, QTimer, QItemSelection
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QAbstractItemView
 
@@ -23,6 +24,9 @@ from uawidgets import resources  # noqa: F401
 
 from uaclient.mainwindow_ui import Ui_MainWindow
 from uaclient import tree_ui
+from uaclient import attrs_ui
+
+logger = logging.getLogger(__name__)
 
 _SubscriptionData = collections.namedtuple("_SubscriptionData", ["handle", "signal"])
 
@@ -79,6 +83,7 @@ class Window(QMainWindow):
         self._ui.statusBar.hide()
 
         self._setup_ui_tree()
+        self._setup_ui_attrs()
         self._setup_ui_dock()
         self._setup_ui_addr_combo_box()
         self._setup_ui_connect_disconnect()
@@ -96,6 +101,13 @@ class Window(QMainWindow):
         self._ui.treeView.header().setSectionResizeMode(0)
         self._ui.treeView.header().setStretchLastSection(True)
         self._ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+    def _setup_ui_attrs(self):
+        self._attrs_ui = attrs_ui.AttrsWidget(self._ui.attrView)
+        self._attrs_ui.error.connect(self._show_error)
+
+        self._ui.treeView.selectionModel().selectionChanged.connect(self._handle_selection)
+        self._ui.attrRefreshButton.clicked.connect(self._attrs_ui.reload)
 
     def _setup_ui_dock(self):
         # fix stuff imposible to do in qtdesigner
@@ -150,6 +162,17 @@ class Window(QMainWindow):
 
         await self._ua_subscription.unsubscribe(subscription_data.handle)
 
+    @asyncSlot(QItemSelection, QItemSelection)
+    async def _handle_selection(self, _selected: QItemSelection, _deselected: QItemSelection):
+        current_index = self._ui.treeView.currentIndex()
+        if not current_index.isValid():
+            return
+
+        item = current_index.internalPointer()
+        if item:
+            await self._attrs_ui.show_attrs(item.node)
+
+
     @asyncSlot()
     async def _connect(self):
         uri = self._ui.addrComboBox.currentText()
@@ -158,7 +181,7 @@ class Window(QMainWindow):
         try:
             await self._uaclient.connect()
         except Exception as ex:
-            self.show_error(ex)
+            self._show_error(ex)
             raise
 
         self._save_new_uri(uri)
@@ -175,7 +198,7 @@ class Window(QMainWindow):
             if self._uaclient is not None and self._uaclient.uaclient.protocol:
                 await self._uaclient.disconnect()
         except Exception as ex:
-            self.show_error(ex)
+            self._show_error(ex)
             raise
         finally:
             self._uaclient = None
@@ -186,6 +209,15 @@ class Window(QMainWindow):
             # self.refs_ui.clear()
             # self.attrs_ui.clear()
             # self.event_ui.clear()
+
+    def _show_error(self, msg):
+        logger.warning("showing error: %s")
+        self._ui.statusBar.show()
+        self._ui.statusBar.setStyleSheet(
+            "QStatusBar { background-color : red; color : black; }"
+        )
+        self._ui.statusBar.showMessage(str(msg))
+        QTimer.singleShot(1500, self._ui.statusBar.hide)
 
     def _save_new_uri(self, uri):
         address_list = self._settings.value("address_list", [])
