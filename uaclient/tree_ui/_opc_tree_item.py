@@ -83,7 +83,7 @@ class OpcTreeItem(QObject):
 
         values = await self.node.read_attributes(self._columns)
         for index, column in enumerate(self._columns):
-            self.set_data(column, values[index].Value.Value, emit=False)
+            self.set_data(column, values[index].Value, emit=False)
 
     async def refresh_children(self) -> None:
         self.clear_children() # Clear first
@@ -146,11 +146,15 @@ class OpcTreeItem(QObject):
             self._model.index(self.row(), column, QModelIndex(self._parent_index))
         )
 
-    def clear_children(self) -> None:
+    def clear_children(self, *, recursive=False) -> None:
         self._children_fetched = False
         children_count = self.child_count()
         if children_count == 0:
             return
+
+        if recursive:
+            for child in self._children:
+                child.clear_children(recursive=True)
 
         index = QModelIndex(self.persistent_index(0))
         self._model.beginRemoveRows(index, 0, children_count - 1)
@@ -212,12 +216,15 @@ class OpcTreeItem(QObject):
             return QIcon(":/reference_type.svg")
 
     def set_data(
-        self, attribute: ua.AttributeIds, value: Any, *, emit: bool = True
+        self, attribute: ua.AttributeIds, value: ua.DataValue, *, emit: bool = True
     ) -> None:
-        if isinstance(value, ua.LocalizedText):
-            value = value.Text
+        real_value = value.Value
+        if isinstance(real_value, ua.LocalizedText):
+            real_value = real_value.Text
+        elif isinstance(real_value, ua.Variant):
+            real_value = real_value.Value
 
-        self._data[attribute] = value
+        self._data[attribute] = real_value
 
         if emit:
             # Emit signal letting subscribers know what data has changed here

@@ -167,3 +167,6 @@ class OpcTreeModel(QAbstractItemModel):
         # Clear the children for the item just collapsed
         item = index.internalPointer()
         item.clear_children()
+
+    def clear(self) -> None:
+        self._root_item.clear_children(recursive=True)

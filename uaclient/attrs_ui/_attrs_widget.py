@@ -4,6 +4,7 @@ import logging
 import functools
 from enum import Enum
 from dataclasses import fields
+from typing import Any
 
 from PyQt5.QtCore import pyqtSignal, Qt, QObject, QSettings
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
@@ -97,20 +98,17 @@ class AttrsWidget(QObject):
     error = pyqtSignal(Exception)
     attr_written = pyqtSignal(ua.AttributeIds, ua.DataValue)
 
-    def __init__(self, view, show_timestamps=True):
+    def __init__(self, view, subscription_data):
         QObject.__init__(self, view)
         self.view = view
-        self._timestamps = show_timestamps
+        self._timestamps = True
+        self._subscription_data = subscription_data
         delegate = MyDelegate(self.view, self)
         delegate.error.connect(self.error.emit)
         delegate.attr_written.connect(self.attr_written.emit)
-        self.settings = QSettings()
         self.view.setItemDelegate(delegate)
         self.model = QStandardItemModel()
         self.model.setHorizontalHeaderLabels(['Attribute', 'Value', 'DataType'])
-        state = self.settings.value("WindowState/attrs_widget_state", None)
-        if state is not None:
-            self.view.header().restoreState(state)
         self.view.setModel(self.model)
         self.current_node = None
         self.view.header().setSectionResizeMode(0)
@@ -127,8 +125,13 @@ class AttrsWidget(QObject):
         self._contextMenu = QMenu()
         self._contextMenu.addAction(copyaction)
 
-    def save_state(self):
-        self.settings.setValue("WindowState/attrs_widget_state", self.view.header().saveState())
+    def save_state(self, settings: QSettings):
+        settings.setValue("header/state", self.view.header().saveState())
+
+    def load_state(self, settings: QSettings):
+        state = settings.value("header/state", None)
+        if state is not None:
+            self.view.header().restoreState(state)
 
     def _item_expanded(self, idx):
         if not idx.parent().isValid():
@@ -166,12 +169,24 @@ class AttrsWidget(QObject):
     async def reload(self):
         await self.show_attrs(self.current_node)
 
+    def _set_value(self, dv: ua.DataValue):
+        items = self.model.findItems("Value")
+        if len(items) != 1:
+            raise RuntimeError(f'Expected a single value item, got {len(items)}')
+
+        self._update_value_attr(items[0], ua.AttributeIds.Value, dv)
+
     async def show_attrs(self, node):
+        if self.current_node is not None and self.current_node != node:
+            self._subscription_data[self.current_node.nodeid].signal.signal.disconnect(self._set_value)
+
         self.current_node = node
         self.clear()
         if self.current_node:
             await self._show_attrs()
         self.view.expandToDepth(0)
+
+        self._subscription_data[self.current_node.nodeid].signal.signal.connect(self._set_value)
 
     async def _show_attrs(self):
         attrs = await self.get_all_attrs()
@@ -207,12 +222,18 @@ class AttrsWidget(QObject):
 
     def _show_value_attr(self, attr, dv):
         name_item = QStandardItem("Value")
+        self._update_value_attr(name_item, attr, dv)
+
         vitem = QStandardItem()
-        items = self._show_val(name_item, None, "Value", dv.Value.Value, dv.Value.VariantType)
-        items[1].setData(AttributeData(attr, dv.Value.Value, dv.Value.VariantType), Qt.UserRole)
         row = [name_item, vitem, QStandardItem(dv.Value.VariantType.name)]
         self.model.appendRow(row)
-        self._show_timestamps(name_item, dv)
+
+    def _update_value_attr(self, item: QStandardItem, attr, dv):
+        item.removeRows(0, item.rowCount()) # Remove all children before adding more
+
+        items = self._show_val(item, None, "Value", dv.Value.Value, dv.Value.VariantType)
+        items[1].setData(AttributeData(attr, dv.Value.Value, dv.Value.VariantType), Qt.UserRole)
+        self._show_timestamps(item, dv)
 
     def _show_sdef_attr(self, attr, dv):
         if dv.Value.Value is None:

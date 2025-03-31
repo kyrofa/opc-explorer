@@ -10,13 +10,13 @@ import functools
 import logging
 
 from qasync import QEventLoop, QApplication, asyncClose, asyncSlot
-from PyQt5.QtCore import QCoreApplication, QSettings, pyqtSignal, QObject, QTimer, QItemSelection
+from PyQt5.QtCore import QCoreApplication, QSettings, pyqtSignal, QObject, QTimer, QItemSelection, QSignalBlocker
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QAbstractItemView
 
 from asyncua import Client, Node
 from asyncua.common.subscription import DataChangeNotif
-from asyncua.ua import AttributeIds
+from asyncua.ua import AttributeIds, DataValue
 import asyncua.ua.uaerrors
 
 # must be here for resources even if not used
@@ -32,7 +32,7 @@ _SubscriptionData = collections.namedtuple("_SubscriptionData", ["handle", "sign
 
 
 class _SubscriptionSignal(QObject):
-    signal = pyqtSignal(object, str)
+    signal = pyqtSignal(DataValue)
 
 
 class _DataChangeHandler:
@@ -40,27 +40,22 @@ class _DataChangeHandler:
         self._callback = _callback
 
     async def datachange_notification(
-        self, node: Node, value: Any, data: DataChangeNotif
+        self, node: Node, _value: Any, data: DataChangeNotif
     ):
-        if data.monitored_item.Value.SourceTimestamp:
-            timestamp = data.monitored_item.Value.SourceTimestamp.isoformat()
-        elif data.monitored_item.Value.ServerTimestamp:
-            timestamp = data.monitored_item.Value.ServerTimestamp.isoformat()
-        else:
-            timestamp = datetime.now().isoformat()
-
-        await self._callback(node, value, timestamp)
+        await self._callback(node, data.monitored_item.Value)
 
 
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self._setup_settings()
-        self._setup_ui()
 
         self._uaclient = None
         self._ua_subscription = None
         self._ua_subscription_data = dict()
+
+        self._setup_settings()
+        self._setup_ui()
+        self._load_state()
 
     @asyncClose
     async def closeEvent(self, event):
@@ -103,7 +98,7 @@ class Window(QMainWindow):
         self._ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
     def _setup_ui_attrs(self):
-        self._attrs_ui = attrs_ui.AttrsWidget(self._ui.attrView)
+        self._attrs_ui = attrs_ui.AttrsWidget(self._ui.attrView, self._ua_subscription_data)
         self._attrs_ui.error.connect(self._show_error)
 
         self._ui.treeView.selectionModel().selectionChanged.connect(self._handle_selection)
@@ -128,18 +123,37 @@ class Window(QMainWindow):
         self._ui.actionDisconnect.triggered.connect(self._disconnect)
 
     def _save_state(self):
-        self._settings.setValue("main_window_width", self.size().width())
-        self._settings.setValue("main_window_height", self.size().height())
-        self._settings.setValue("main_window_state", self.saveState())
+        self._settings.setValue("main_window/geometry", self.saveGeometry())
+        self._settings.setValue("main_window/state", self.saveState())
+        self._settings.setValue("tree_view/header/state", self._ui.treeView.header().saveState())
 
-    async def _handle_subscription_data(
-        self, node: Node, value: Any, timestamp: str
-    ) -> None:
+        self._settings.beginGroup('attrs_widget')
+        self._attrs_ui.save_state(self._settings)
+        self._settings.endGroup()
+
+    def _load_state(self):
+        data = self._settings.value("main_window/geometry", None)
+        if data is not None:
+            self.restoreGeometry(data)
+
+        data = self._settings.value("main_window/state", None)
+        if data is not None:
+            self.restoreState(data)
+
+        data = self._settings.value("tree_view/header/state", None)
+        if data is not None:
+            self._ui.treeView.header().restoreState(data)
+
+        self._settings.beginGroup('attrs_widget')
+        self._attrs_ui.load_state(self._settings)
+        self._settings.endGroup()
+
+    async def _handle_subscription_data(self, node: Node, value: DataValue) -> None:
         # Suppress KeyError because there might be a race condition
         # between unsubscribing and receiving data, i.e. we might
         # receive data for a subscription we just removed.
         with contextlib.suppress(KeyError):
-            self._ua_subscription_data[node.nodeid].signal.signal.emit(value, timestamp)
+            self._ua_subscription_data[node.nodeid].signal.signal.emit(value)
 
     @asyncSlot(tree_ui.OpcTreeItem)
     async def _subscribe_to_node(self, item: tree_ui.OpcTreeItem):
@@ -163,6 +177,8 @@ class Window(QMainWindow):
         except KeyError:
             return
 
+        # Disconnect signal from all slots, and unsubscribe from the OPC data
+        subscription_data.signal.signal.disconnect()
         await self._ua_subscription.unsubscribe(subscription_data.handle)
 
     @asyncSlot(QItemSelection, QItemSelection)
@@ -174,7 +190,6 @@ class Window(QMainWindow):
         item = current_index.internalPointer()
         if item:
             await self._attrs_ui.show_attrs(item.node)
-
 
     @asyncSlot()
     async def _connect(self):
@@ -208,11 +223,10 @@ class Window(QMainWindow):
             self._uaclient = None
             self._ua_subscription = None
             self._ua_subscription_data = dict()
-            # self.save_current_node()
-            # self.tree_ui.clear()
-            # self.refs_ui.clear()
-            # self.attrs_ui.clear()
-            # self.event_ui.clear()
+
+            with QSignalBlocker(self._ui.treeView.selectionModel()):
+                self._attrs_ui.clear()
+                self._model.clear()
 
     def _show_error(self, msg):
         logger.warning("showing error: %s")
