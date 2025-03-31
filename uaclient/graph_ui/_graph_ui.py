@@ -15,7 +15,9 @@ class Ui_Graph(object):
     def setupUi(self, Graph):
         Graph.setObjectName("Graph")
         Graph.resize(406, 300)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Graph.sizePolicy().hasHeightForWidth())

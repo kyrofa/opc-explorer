@@ -10,7 +10,15 @@ import functools
 import logging
 
 from qasync import QEventLoop, QApplication, asyncClose, asyncSlot
-from PyQt5.QtCore import QCoreApplication, QSettings, pyqtSignal, QObject, QTimer, QItemSelection, QSignalBlocker
+from PyQt5.QtCore import (
+    QCoreApplication,
+    QSettings,
+    pyqtSignal,
+    QObject,
+    QTimer,
+    QItemSelection,
+    QSignalBlocker,
+)
 from PyQt5.QtGui import QStandardItemModel, QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QAbstractItemView
 
@@ -98,10 +106,14 @@ class Window(QMainWindow):
         self._ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
 
     def _setup_ui_attrs(self):
-        self._attrs_ui = attrs_ui.AttrsWidget(self._ui.attrView, self._ua_subscription_data)
+        self._attrs_ui = attrs_ui.AttrsWidget(
+            self._ui.attrView, self._ua_subscription_data
+        )
         self._attrs_ui.error.connect(self._show_error)
 
-        self._ui.treeView.selectionModel().selectionChanged.connect(self._handle_selection)
+        self._ui.treeView.selectionModel().selectionChanged.connect(
+            self._handle_selection
+        )
         self._ui.attrRefreshButton.clicked.connect(self._attrs_ui.reload)
 
     def _setup_ui_dock(self):
@@ -125,9 +137,11 @@ class Window(QMainWindow):
     def _save_state(self):
         self._settings.setValue("main_window/geometry", self.saveGeometry())
         self._settings.setValue("main_window/state", self.saveState())
-        self._settings.setValue("tree_view/header/state", self._ui.treeView.header().saveState())
+        self._settings.setValue(
+            "tree_view/header/state", self._ui.treeView.header().saveState()
+        )
 
-        self._settings.beginGroup('attrs_widget')
+        self._settings.beginGroup("attrs_widget")
         self._attrs_ui.save_state(self._settings)
         self._settings.endGroup()
 
@@ -144,7 +158,7 @@ class Window(QMainWindow):
         if data is not None:
             self._ui.treeView.header().restoreState(data)
 
-        self._settings.beginGroup('attrs_widget')
+        self._settings.beginGroup("attrs_widget")
         self._attrs_ui.load_state(self._settings)
         self._settings.endGroup()
 
@@ -182,7 +196,9 @@ class Window(QMainWindow):
         await self._ua_subscription.unsubscribe(subscription_data.handle)
 
     @asyncSlot(QItemSelection, QItemSelection)
-    async def _handle_selection(self, _selected: QItemSelection, _deselected: QItemSelection):
+    async def _handle_selection(
+        self, _selected: QItemSelection, _deselected: QItemSelection
+    ):
         current_index = self._ui.treeView.currentIndex()
         if not current_index.isValid():
             return

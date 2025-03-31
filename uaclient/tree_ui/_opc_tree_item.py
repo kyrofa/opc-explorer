@@ -17,6 +17,7 @@ from PyQt5.QtGui import QIcon
 
 from asyncua import ua, Node
 
+
 async def _refresh_item(item):
     await item._refresh_data()
     return item
@@ -75,13 +76,16 @@ class OpcTreeItem(QObject):
             self.set_data(column, values[index].Value, emit=False)
 
     async def refresh_children(self) -> None:
-        self.clear_children() # Clear first
+        self.clear_children()  # Clear first
 
         children = await self.node.get_children()
         index = self.persistent_index(0)
-        items = [OpcTreeItem(self._model, child, index, self._requested_columns) for child in children]
+        items = [
+            OpcTreeItem(self._model, child, index, self._requested_columns)
+            for child in children
+        ]
 
-        self._model.beginInsertRows(QModelIndex(index), 0, len(children)-1)
+        self._model.beginInsertRows(QModelIndex(index), 0, len(children) - 1)
 
         for task in asyncio.as_completed([_refresh_item(item) for item in items]):
             item = await task
