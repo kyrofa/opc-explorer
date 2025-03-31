@@ -15,7 +15,6 @@ def get_attr_value(text, client):
     item = client.attrs_ui.model.itemFromIndex(idx)
     return item.data(Qt.UserRole).value
 
-
 def test_select_objects(client, server):
     objects = server.nodes.objects
     client.tree_ui.expand_to_node(objects)

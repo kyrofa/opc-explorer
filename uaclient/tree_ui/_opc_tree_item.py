@@ -17,15 +17,6 @@ from PyQt5.QtGui import QIcon
 
 from asyncua import ua, Node
 
-_BATCH_SIZE = 5
-
-
-# This exists in itertools in Python 3.12, but we're not there yet
-def _batched(iterable, batch_size):
-    iterator = iter(iterable)
-    while batch := tuple(itertools.islice(iterator, batch_size)):
-        yield batch
-
 async def _refresh_item(item):
     await item._refresh_data()
     return item
@@ -57,6 +48,13 @@ class OpcTreeItem(QObject):
         self._type_definition = None
 
         self._requested_columns = columns
+        self._model_column_to_ua_column = dict(
+            [(index, column) for index, column in enumerate(columns)]
+        )
+        self._ua_column_to_model_column = dict(
+            [(column, index) for index, column in enumerate(columns)]
+        )
+
         self._columns = copy.deepcopy(columns)
 
         # We always need the node class to determine icon, even if it wasn't requested
@@ -67,16 +65,7 @@ class OpcTreeItem(QObject):
         if ua.AttributeIds.BrowseName not in self._columns:
             self._columns.append(ua.AttributeIds.BrowseName)
 
-        self._model_column_to_ua_column = dict(
-            [(index, column) for index, column in enumerate(columns)]
-        )
-
-        self._ua_column_to_model_column = dict(
-            [(column, index) for index, column in enumerate(columns)]
-        )
-
-        # Create an dict that maintains column order
-        self._data = collections.OrderedDict([(column, None) for column in columns])
+        self._data = {}
 
     async def _refresh_data(self) -> None:
         self._type_definition = await self.node.read_type_definition()
