@@ -2,7 +2,6 @@
 
 import sys
 import asyncio
-from datetime import datetime
 from typing import Any
 import contextlib
 import collections
@@ -19,7 +18,7 @@ from PyQt5.QtCore import (
     QItemSelection,
     QSignalBlocker,
 )
-from PyQt5.QtGui import QStandardItemModel, QIcon
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QWidget, QAbstractItemView
 
 from asyncua import Client, Node

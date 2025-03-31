@@ -1,11 +1,7 @@
-import itertools
 import asyncio
-import collections
 import copy
-import contextlib
-from typing import Optional, Any, List, Callable
+from typing import Optional, Any, List, Dict, cast
 
-from qasync import asyncSlot
 from PyQt5.QtCore import (
     QObject,
     pyqtSignal,
@@ -66,7 +62,7 @@ class OpcTreeItem(QObject):
         if ua.AttributeIds.BrowseName not in self._columns:
             self._columns.append(ua.AttributeIds.BrowseName)
 
-        self._data = {}
+        self._data: Dict[ua.AttributeIds, Any] = {}
 
     async def _refresh_data(self) -> None:
         self._type_definition = await self.node.read_type_definition()
@@ -160,11 +156,12 @@ class OpcTreeItem(QObject):
         self._model.endRemoveRows()
 
     def row(self) -> int:
-        if self.parent() is None:
+        parent = cast("OpcTreeItem", self.parent())
+
+        if parent is None:
             return 0
 
-        with contextlib.suppress(ValueError):
-            return self.parent()._children.index(self)
+        return parent._children.index(self)
 
     def child_count(self) -> int:
         return len(self._children)
@@ -175,7 +172,7 @@ class OpcTreeItem(QObject):
     def data(self, column: int) -> Any:
         return self._data[self._model_column_to_ua_column[column]]
 
-    def icon(self) -> QIcon:
+    def icon(self) -> Optional[QIcon]:
         try:
             node_class = self._data[ua.AttributeIds.NodeClass]
         except KeyError:
@@ -207,6 +204,8 @@ class OpcTreeItem(QObject):
             return QIcon(":/data_type.svg")
         elif node_class == ua.NodeClass.ReferenceType:
             return QIcon(":/reference_type.svg")
+
+        return None
 
     def set_data(
         self, attribute: ua.AttributeIds, value: ua.DataValue, *, emit: bool = True

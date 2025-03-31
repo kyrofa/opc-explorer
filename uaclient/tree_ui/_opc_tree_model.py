@@ -1,8 +1,4 @@
-import sys
-from typing import Any, List
-import itertools
-import functools
-from datetime import datetime
+from typing import Any, List, Union, Optional, overload
 
 from qasync import asyncSlot
 from PyQt5.QtCore import (
@@ -12,9 +8,9 @@ from PyQt5.QtCore import (
     pyqtSignal,
     QAbstractItemModel,
     QVariant,
+    QObject,
 )
 
-import asyncio
 from asyncua import Node
 from asyncua.ua import AttributeIds
 from ._opc_tree_item import OpcTreeItem
@@ -75,7 +71,18 @@ class OpcTreeModel(QAbstractItemModel):
 
         return self.createIndex(row, column, child_item)
 
-    def parent(self, child: QModelIndex) -> QModelIndex:
+    @overload
+    def parent(self, child: QModelIndex) -> QModelIndex: ...
+
+    @overload
+    def parent(self) -> Optional[QObject]: ...
+
+    def parent(
+        self, child: Optional[QModelIndex] = None
+    ) -> Union[Optional[QObject], QModelIndex]:
+        if child is None:
+            return super().parent()
+
         if not child.isValid():
             return QModelIndex()
 
