@@ -1,4 +1,8 @@
 import pytest
+import asyncio
+
+from pytestqt.qtbot import QtBot
+
 from asyncua import Server
 from asyncua.sync import Server as SyncServer
 
@@ -37,3 +41,18 @@ def client(qtbot, url):
     client.connect()
     yield client
     client.disconnect()
+
+
+@pytest.fixture
+def wait_signal():
+    async def _signal_waiter(signal, timeout=1000):
+        done = asyncio.Event()
+
+        def _quit_loop(*args):
+            done.set()
+
+        signal.connect(_quit_loop)
+
+        await asyncio.wait_for(done.wait(), timeout)
+
+    return _signal_waiter

@@ -92,7 +92,7 @@ async def test_row_with_parent(qtbot, mock_model, async_server):
     await item.refresh_children()
 
     assert item.child_count() == 1
-    assert item._children[0].row() == 0
+    assert item.child(0).row() == 0
 
 
 async def test_row_multiple_children(qtbot, mock_model, async_server):
@@ -110,7 +110,7 @@ async def test_row_multiple_children(qtbot, mock_model, async_server):
     await item.refresh_children()
 
     assert item.child_count() == 2
-    assert item._children[1].row() == 1
+    assert item.child(1).row() == 1
 
 
 async def test_data(mock_model, async_server):

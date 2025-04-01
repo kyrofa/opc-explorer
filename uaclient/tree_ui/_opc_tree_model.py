@@ -10,6 +10,7 @@ from PyQt5.QtCore import (
     QVariant,
     QObject,
 )
+from PyQt5.QtWidgets import QTreeView
 
 from asyncua import Node
 from asyncua.ua import AttributeIds
@@ -50,13 +51,17 @@ class OpcTreeModel(QAbstractItemModel):
     item_added = pyqtSignal(OpcTreeItem)
     item_removed = pyqtSignal(OpcTreeItem)
 
-    def __init__(self, columns: List[AttributeIds]):
+    def __init__(self, view: QTreeView, columns: List[AttributeIds]):
         super().__init__()
         self._columns = columns
         self._root_item = OpcTreeItem(self, None, QPersistentModelIndex(), columns)
         self._root_item.data_changed.connect(self._handle_data_changed)
         self._root_item.item_added.connect(self.item_added)
         self._root_item.item_removed.connect(self.item_removed)
+
+        view.setModel(self)
+        view.expanded.connect(self._handle_expanded)
+        view.collapsed.connect(self._handle_collapsed)
 
     def index(
         self, row: int, column: int, parent: QModelIndex = QModelIndex()
@@ -151,6 +156,9 @@ class OpcTreeModel(QAbstractItemModel):
             return QVariant(_UA_ATTRIBUTE_NAMES[self._columns[section]])
         return QVariant()
 
+    def clear(self) -> None:
+        self._root_item.clear_children(recursive=True)
+
     @asyncSlot(QModelIndex, QModelIndex)
     async def _handle_data_changed(
         self, start_index: QModelIndex, end_index: QModelIndex
@@ -158,7 +166,7 @@ class OpcTreeModel(QAbstractItemModel):
         self.dataChanged.emit(start_index, end_index)
 
     @asyncSlot(QModelIndex)
-    async def handle_expanded(self, index: QModelIndex) -> None:
+    async def _handle_expanded(self, index: QModelIndex) -> None:
         if not index.isValid():
             return
 
@@ -167,13 +175,10 @@ class OpcTreeModel(QAbstractItemModel):
         await item.refresh_children()
 
     @asyncSlot(QModelIndex)
-    async def handle_collapsed(self, index: QModelIndex) -> None:
+    async def _handle_collapsed(self, index: QModelIndex) -> None:
         if not index.isValid():
             return
 
         # Clear the children for the item just collapsed
         item = index.internalPointer()
         item.clear_children()
-
-    def clear(self) -> None:
-        self._root_item.clear_children(recursive=True)

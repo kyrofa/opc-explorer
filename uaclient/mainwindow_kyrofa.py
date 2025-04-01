@@ -92,14 +92,10 @@ class Window(QMainWindow):
 
     def _setup_ui_tree(self):
         self._model = tree_ui.OpcTreeModel(
+            self._ui.treeView,
             [AttributeIds.DisplayName, AttributeIds.Value]
         )
-        self._model.item_added.connect(self._subscribe_to_node)
-        self._model.item_removed.connect(self._unsubscribe_from_node)
 
-        self._ui.treeView.setModel(self._model)
-        self._ui.treeView.expanded.connect(self._model.handle_expanded)
-        self._ui.treeView.collapsed.connect(self._model.handle_collapsed)
         self._ui.treeView.header().setSectionResizeMode(0)
         self._ui.treeView.header().setStretchLastSection(True)
         self._ui.treeView.setSelectionBehavior(QAbstractItemView.SelectRows)
