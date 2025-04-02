@@ -2,6 +2,7 @@
 
 import logging
 import functools
+import contextlib
 from enum import Enum
 from dataclasses import fields
 
@@ -188,9 +189,10 @@ class AttrsWidget(QObject):
 
     async def show_attrs(self, node):
         if self.current_node is not None and self.current_node != node:
-            self._subscription_data[self.current_node.nodeid].signal.signal.disconnect(
-                self._set_value
-            )
+            with contextlib.suppress(TypeError, KeyError):
+                self._subscription_data[
+                    self.current_node.nodeid
+                ].signal.signal.disconnect(self._set_value)
 
         self.current_node = node
         self.clear()
@@ -198,9 +200,10 @@ class AttrsWidget(QObject):
             await self._show_attrs()
         self.view.expandToDepth(0)
 
-        self._subscription_data[self.current_node.nodeid].signal.signal.connect(
-            self._set_value
-        )
+        with contextlib.suppress(KeyError):
+            self._subscription_data[self.current_node.nodeid].signal.signal.connect(
+                self._set_value
+            )
 
     async def _show_attrs(self):
         attrs = await self.get_all_attrs()

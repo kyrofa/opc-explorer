@@ -14,8 +14,15 @@ _URL = "opc.tcp://localhost:48400/opc-explorer/server"
 
 async def _generate_values(server: Server, shutdown_event: asyncio.Event):
     index = await server.register_namespace("demo")
-    object_node = await server.nodes.objects.add_object(index, "TestObject")
-    variable = await object_node.add_variable(index, "TestVariable", 42)
+
+    big_folder = await server.nodes.objects.add_folder(index, "Big")
+    for n in range(1, 1000):
+        if shutdown_event.is_set():
+            return
+        variable = await big_folder.add_variable(index, f"Variable {n}", n)
+
+    dynamic_folder = await server.nodes.objects.add_folder(index, "Dynamic")
+    variable = await dynamic_folder.add_variable(index, "TestVariable", 42)
 
     while not shutdown_event.is_set():
         await variable.write_value(random.randint(1, 100))
@@ -23,17 +30,18 @@ async def _generate_values(server: Server, shutdown_event: asyncio.Event):
 
 
 async def main():
+    shutdown_event = asyncio.Event()
+
+    def _shutdown(signal_received, frame):
+        print("Shutting down...")
+        shutdown_event.set()
+
+    signal.signal(signal.SIGINT, _shutdown)
+
     server = Server()
     await server.init()
     server.set_endpoint(_URL)
     await server.start()
-
-    shutdown_event = asyncio.Event()
-
-    def _shutdown(signal_received, frame):
-        shutdown_event.set()
-
-    signal.signal(signal.SIGINT, _shutdown)
 
     await asyncio.gather(_generate_values(server, shutdown_event))
     await server.stop()
