@@ -94,6 +94,8 @@ class Window(QMainWindow):
         self._model = tree_ui.OpcTreeModel(
             self._ui.treeView, [AttributeIds.DisplayName, AttributeIds.Value]
         )
+        self._model.item_added.connect(self._subscribe_to_node)
+        self._model.item_removed.connect(self._unsubscribe_from_node)
 
         self._ui.treeView.header().setSectionResizeMode(0)
         self._ui.treeView.header().setStretchLastSection(True)
