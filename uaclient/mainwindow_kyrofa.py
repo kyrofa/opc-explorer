@@ -92,8 +92,7 @@ class Window(QMainWindow):
 
     def _setup_ui_tree(self):
         self._model = tree_ui.OpcTreeModel(
-            self._ui.treeView,
-            [AttributeIds.DisplayName, AttributeIds.Value]
+            self._ui.treeView, [AttributeIds.DisplayName, AttributeIds.Value]
         )
 
         self._ui.treeView.header().setSectionResizeMode(0)

@@ -1,11 +1,10 @@
 import pytest
-import asyncio
 
 from unittest import mock
 
-from PyQt5.QtCore import Qt, QAbstractItemModel, QPersistentModelIndex, QModelIndex
-from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTreeView
+from PyQt5.QtGui import QIcon
 
 from asyncua import ua
 
@@ -19,52 +18,105 @@ def tree_view(qtbot):
     yield view
 
 
-# def test_init(tree_view):
-#     with mock.patch.object(tree_view, "setModel") as mock_set_model:
-#         model = OpcTreeModel(tree_view, [])
+def test_init(tree_view):
+    with mock.patch.object(tree_view, "setModel") as mock_set_model:
+        model = OpcTreeModel(tree_view, [])
 
-#     mock_set_model.assert_called_with(model)
-#     assert model.columnCount() == 0
-#     assert model.rowCount() == 0
-
-
-# def test_init_columns(tree_view):
-#     model = OpcTreeModel(
-#         tree_view, [ua.AttributeIds.DisplayName, ua.AttributeIds.BrowseName]
-#     )
-#     assert model.columnCount() == 2
-#     assert model.rowCount() == 0
+    mock_set_model.assert_called_with(model)
+    assert model.columnCount() == 0
+    assert model.rowCount() == 0
 
 
-# def test_header_data(tree_view):
-#     model = OpcTreeModel(
-#         tree_view, [ua.AttributeIds.DisplayName, ua.AttributeIds.BrowseName]
-#     )
-
-#     assert model.headerData(0, Qt.Orientation.Horizontal) == "Display Name"
-#     assert model.headerData(1, Qt.Orientation.Horizontal) == "Browse Name"
-
-
-# def test_header_data_all_possible_columns(tree_view):
-#     model = OpcTreeModel(tree_view, [id for id in ua.AttributeIds])
-
-#     assert model.columnCount() > 0
-
-#     # Make sure no possible column throws KeyErrors when we're fetching its name
-#     for column in range(model.columnCount()):
-#         model.headerData(column, Qt.Orientation.Horizontal)
+def test_init_columns(tree_view):
+    model = OpcTreeModel(
+        tree_view, [ua.AttributeIds.DisplayName, ua.AttributeIds.BrowseName]
+    )
+    assert model.columnCount() == 2
+    assert model.rowCount() == 0
 
 
-async def test_expand_root_node(qtbot, tree_view, async_server):
+def test_header_data(tree_view):
+    model = OpcTreeModel(
+        tree_view, [ua.AttributeIds.DisplayName, ua.AttributeIds.BrowseName]
+    )
+
+    assert model.headerData(0, Qt.Orientation.Horizontal) == "Display Name"
+    assert model.headerData(1, Qt.Orientation.Horizontal) == "Browse Name"
+
+
+def test_header_data_all_possible_columns(tree_view):
+    model = OpcTreeModel(tree_view, [id for id in ua.AttributeIds])
+
+    assert model.columnCount() > 0
+
+    # Make sure no possible column throws KeyErrors when we're fetching its name
+    for column in range(model.columnCount()):
+        model.headerData(column, Qt.Orientation.Horizontal)
+
+
+async def test_data(tree_view, async_server, wait_for_signal):
+    model = OpcTreeModel(
+        tree_view, [ua.AttributeIds.DisplayName, ua.AttributeIds.Value]
+    )
+
+    index = await async_server.register_namespace("test")
+    object_node = await async_server.nodes.objects.add_object(index, "TestObject")
+    node = await object_node.add_variable(index, "TestVariable", 42)
+
+    await model.set_root_node(object_node)
+
+    root_index = model.index(0, 0)
+    tree_view.expanded.emit(root_index)
+    await wait_for_signal(
+        model.item_added, check_params_callback=lambda item: item.node == node
+    )
+
+    assert model.data(root_index) == "TestObject"
+    assert model.data(model.index(0, 0, root_index)) == "TestVariable"
+    assert model.data(model.index(0, 1, root_index)) == 42
+
+    # DecorationRole gets an icon
+    assert isinstance(
+        model.data(model.index(0, 0, root_index), Qt.ItemDataRole.DecorationRole), QIcon
+    )
+
+
+async def _expand_root_node(tree_view, async_server, wait_for_signal):
     model = OpcTreeModel(tree_view, [ua.AttributeIds.DisplayName])
 
     index = await async_server.register_namespace("test")
-    node = await async_server.nodes.objects.add_variable(index, "TestVariable", 42)
+    object_node = await async_server.nodes.objects.add_object(index, "TestObject")
+    node = await object_node.add_variable(index, "TestVariable", 42)
 
-    await model.set_root_node(async_server.nodes.objects)
+    await model.set_root_node(object_node)
+    assert model.rowCount() == 1
 
-    with qtbot.waitSignal(model.item_added, timeout=10000) as blocker:
-        tree_view.expanded.emit(model.index(0, 0))
-        await asyncio.sleep(1)
+    index = model.index(0, 0)
+    assert model.rowCount(index) == 0
 
-    assert blocker.args[0].node == node
+    tree_view.expanded.emit(index)
+    await wait_for_signal(
+        model.item_added, check_params_callback=lambda item: item.node == node
+    )
+
+    assert model.rowCount(index) == 1
+
+    return model, node
+
+
+async def test_expand_root_node(tree_view, async_server, wait_for_signal):
+    await _expand_root_node(tree_view, async_server, wait_for_signal)
+
+
+async def test_collapse_root_node(tree_view, async_server, wait_for_signal):
+    model, node = await _expand_root_node(tree_view, async_server, wait_for_signal)
+
+    index = model.index(0, 0)
+    assert model.rowCount(index) == 1
+
+    tree_view.collapsed.emit(index)
+    await wait_for_signal(
+        model.item_removed, check_params_callback=lambda item: item.node == node
+    )
+
+    assert model.rowCount(index) == 0

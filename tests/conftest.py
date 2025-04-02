@@ -1,8 +1,6 @@
 import pytest
 import asyncio
 
-from pytestqt.qtbot import QtBot
-
 from asyncua import Server
 from asyncua.sync import Server as SyncServer
 
@@ -44,15 +42,25 @@ def client(qtbot, url):
 
 
 @pytest.fixture
-def wait_signal():
-    async def _signal_waiter(signal, timeout=1000):
-        done = asyncio.Event()
+def wait_for_signal():
+    async def _signal_waiter(signal, *, timeout=1, check_params_callback=None):
+        signal_received = asyncio.Event()
+        calls = []
 
         def _quit_loop(*args):
-            done.set()
+            if check_params_callback is None or check_params_callback(*args):
+                calls.append(args)
+                signal_received.set()
 
         signal.connect(_quit_loop)
 
-        await asyncio.wait_for(done.wait(), timeout)
+        try:
+            await asyncio.wait_for(signal_received.wait(), timeout)
+        except (TimeoutError, asyncio.TimeoutError):
+            pytest.fail(
+                f"Timed out waiting to receive {signal.signal.lstrip('2')} signal"
+            )
+
+        return calls
 
     return _signal_waiter
