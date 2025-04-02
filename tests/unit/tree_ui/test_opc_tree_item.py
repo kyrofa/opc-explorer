@@ -143,6 +143,71 @@ async def test_data_reversed(mock_model, async_server):
     assert item.data(1) == "TestVariable"
 
 
+async def _setup_child_tests(mock_model, async_server):
+    mock_model.index.return_value = QModelIndex()
+
+    index = await async_server.register_namespace("test")
+    node1 = await async_server.nodes.objects.add_object(index, "TestObject1")
+    node2 = await async_server.nodes.objects.add_object(index, "TestObject2")
+
+    root_item = OpcTreeItem(
+        mock_model,
+        async_server.nodes.objects,
+        QPersistentModelIndex(),
+        [ua.AttributeIds.DisplayName],
+    )
+
+    item1 = OpcTreeItem(
+        mock_model,
+        node1,
+        QPersistentModelIndex(),
+        [ua.AttributeIds.DisplayName],
+    )
+
+    item2 = OpcTreeItem(
+        mock_model,
+        node2,
+        QPersistentModelIndex(),
+        [ua.AttributeIds.DisplayName],
+    )
+
+    return root_item, item1, item2
+
+
+async def test_add_child(mock_model, async_server):
+    root_item, item1, item2 = await _setup_child_tests(mock_model, async_server)
+
+    await root_item.add_child(item1)
+    assert item1.parent() == root_item
+    assert root_item.child_count() == 1
+    assert root_item.child(0) == item1
+
+    await root_item.add_child(item2)
+    assert item2.parent() == root_item
+    assert root_item.child_count() == 2
+
+    # Assert that the children are sorted
+    assert root_item.child(0) == item1
+    assert root_item.child(1) == item2
+
+
+async def test_add_child_reversed(mock_model, async_server):
+    root_item, item1, item2 = await _setup_child_tests(mock_model, async_server)
+
+    await root_item.add_child(item2)
+    assert item2.parent() == root_item
+    assert root_item.child_count() == 1
+    assert root_item.child(0) == item2
+
+    await root_item.add_child(item1)
+    assert item1.parent() == root_item
+    assert root_item.child_count() == 2
+
+    # Assert that the children are still sorted
+    assert root_item.child(0) == item1
+    assert root_item.child(1) == item2
+
+
 async def test_refresh_children(qtbot, mock_model, async_server):
     index = await async_server.register_namespace("test")
     node = await async_server.nodes.objects.add_object(index, "TestObject")
@@ -155,11 +220,14 @@ async def test_refresh_children(qtbot, mock_model, async_server):
 
     mock_model.index.return_value = QModelIndex()
 
+    assert not item.children_fetched()
+
     with qtbot.waitSignal(item.item_added, timeout=0) as blocker:
         await item.refresh_children()
 
     assert blocker.args[0].node == child
     assert item.child_count() == 1
+    assert item.children_fetched()
 
     mock_model.beginInsertRows.assert_called_with(ANY, 0, 0)
     mock_model.endInsertRows.assert_called_with()
@@ -178,14 +246,30 @@ async def test_clear_children(qtbot, mock_model, async_server):
     await item._refresh_data()
     await item.refresh_children()
 
+    assert item.children_fetched()
     with qtbot.waitSignal(item.item_removed, timeout=0) as blocker:
         item.clear_children()
 
     assert blocker.args[0].node == child
     assert item.child_count() == 0
+    assert not item.children_fetched()
 
     mock_model.beginRemoveRows.assert_called_with(ANY, 0, 0)
     mock_model.endRemoveRows.assert_called_with()
+
+
+async def test_set_data(qtbot, mock_model, async_server):
+    mock_model.index.return_value = QModelIndex()
+
+    item = OpcTreeItem(
+        mock_model,
+        async_server.nodes.objects,
+        QPersistentModelIndex(),
+        [ua.AttributeIds.Value],
+    )
+
+    with qtbot.waitSignal(item.data_changed, timeout=0):
+        item.set_data(ua.AttributeIds.Value, ua.DataValue(42))
 
 
 async def test_icon_without_data(mock_model, async_server):

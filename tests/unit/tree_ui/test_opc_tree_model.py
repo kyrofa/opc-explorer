@@ -2,7 +2,7 @@ import pytest
 
 from unittest import mock
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import QTreeView
 from PyQt5.QtGui import QIcon
 
@@ -33,6 +33,20 @@ def test_init_columns(tree_view):
     )
     assert model.columnCount() == 2
     assert model.rowCount() == 0
+
+
+async def test_index(tree_view, async_server):
+    model = OpcTreeModel(tree_view, [ua.AttributeIds.DisplayName])
+
+    assert not model.index(0, 0).isValid()
+
+    index = await async_server.register_namespace("test")
+    object_node = await async_server.nodes.objects.add_object(index, "TestObject")
+    await model.set_root_node(object_node)
+
+    index = model.index(0, 0)
+    assert index.isValid()
+    assert index.data() == "TestObject"
 
 
 def test_header_data(tree_view):
@@ -82,7 +96,7 @@ async def test_data(tree_view, async_server, wait_for_signal):
 
 
 async def _expand_root_node(tree_view, async_server, wait_for_signal):
-    model = OpcTreeModel(tree_view, [ua.AttributeIds.DisplayName])
+    model = OpcTreeModel(tree_view, [ua.AttributeIds.Value])
 
     index = await async_server.register_namespace("test")
     object_node = await async_server.nodes.objects.add_object(index, "TestObject")
@@ -120,3 +134,60 @@ async def test_collapse_root_node(tree_view, async_server, wait_for_signal):
     )
 
     assert model.rowCount(index) == 0
+
+
+async def test_data_changed(tree_view, async_server, wait_for_signal):
+    model, _node = await _expand_root_node(tree_view, async_server, wait_for_signal)
+
+    child_index = model.index(0, 0, model.index(0, 0))
+    assert child_index.isValid()
+
+    item = child_index.internalPointer()
+    item.set_data(ua.AttributeIds.Value, ua.DataValue(43))
+
+    data_index = QModelIndex(child_index)
+
+    def _check_params_callback(*args):
+        return args[0] == data_index and args[1] == data_index
+
+    await wait_for_signal(
+        model.dataChanged,
+        check_params_callback=_check_params_callback,
+    )
+
+
+async def test_has_children(tree_view, async_server, wait_for_signal):
+    model = OpcTreeModel(tree_view, [ua.AttributeIds.Value])
+
+    index = await async_server.register_namespace("test")
+    node = await async_server.nodes.objects.add_object(index, "TestObject")
+    await node.add_variable(index, "TestVariable", 42)
+
+    await model.set_root_node(node)
+    index = model.index(0, 0)
+
+    # We haven't actually fetched any yet, so it should assume we have children
+    assert model.hasChildren(index)
+
+    await index.internalPointer().refresh_children()
+
+    # Now we've fetched them, it knows we do
+    assert model.hasChildren(index)
+
+
+async def test_has_children_no_children(tree_view, async_server, wait_for_signal):
+    model = OpcTreeModel(tree_view, [ua.AttributeIds.Value])
+
+    index = await async_server.register_namespace("test")
+    node = await async_server.nodes.objects.add_variable(index, "TestVariable", 42)
+
+    await model.set_root_node(node)
+    index = model.index(0, 0)
+
+    # We haven't actually fetched any yet, so it should assume we have children
+    assert model.hasChildren(index)
+
+    await index.internalPointer().refresh_children()
+
+    # Now we've fetched them, it knows we do not
+    assert not model.hasChildren(index)
